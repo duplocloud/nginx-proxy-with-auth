@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+mkdir -m 777 -p /project/flask_cookie
+
 oauth_url=""
 if [ $OAUTH_PROVIDER = 'google' ]
 then

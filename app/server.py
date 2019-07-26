@@ -2,14 +2,22 @@ from flask import Flask, jsonify, make_response, redirect, request, session
 import json
 import requests
 from flask_cors import CORS
+from flask_session import Session
 import os
 
 app = Flask(__name__)
-CORS(app)
-
+SESSION_COOKIE_NAME = 'duplo_auth_proxy_session'
+SESSION_TYPE = 'filesystem'
+SESSION_FILE_DIR = '/project/flask_cookie'
 secret = os.environ.get('FLASK_APP_SECRET')
+SECRET_KEY = secret.encode()
+
+app.config.from_object(__name__)
+
+CORS(app)
+Session(app)
+
 auth_provider = os.environ.get('OAUTH_PROVIDER')
-app.secret_key = secret.encode()
 
 rules_detail = os.environ.get('ACCESS_RULES')
 rules_detail = rules_detail.replace("'", '"')
@@ -98,8 +106,8 @@ def login():
 
             if user_info_response.status_code == 200:
                 user_details = user_info_response.json()
-                print("user details got")
                 session['email'] = user_details['userPrincipalName']
+                print("user details got setting email to sessoin ", session['email'])
 
     response = make_response(redirect('/' + proxy_home_uri))
     return response
@@ -113,7 +121,6 @@ def api_private():
 
     is_allowed = False
     if 'email' in session and session['email']:
-
         if duplo_auth_token:
             duplo_auth_headers = {
                 'Authorization': 'Bearer ' + duplo_auth_token
