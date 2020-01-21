@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 
 mkdir -m 777 -p /project/flask_cookie
 
