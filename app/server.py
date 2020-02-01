@@ -17,19 +17,17 @@ app.config.from_object(__name__)
 CORS(app)
 Session(app)
 
-auth_provider = os.environ.get('OAUTH_PROVIDER')
+# rules_detail = os.environ.get('ACCESS_RULES')
+# rules_detail = rules_detail.replace("'", '"')
+# rules = []
+# if rules_detail:
+#     rules = json.loads(rules_detail)
 
-rules_detail = os.environ.get('ACCESS_RULES')
-rules_detail = rules_detail.replace("'", '"')
-rules = []
-if rules_detail:
-    rules = json.loads(rules_detail)
+# allowed_email_ids = os.environ.get('ALLOWED_EMAIL_IDS')
+# allowed_email_id_list = []
 
-allowed_email_ids = os.environ.get('ALLOWED_EMAIL_IDS')
-allowed_email_id_list = []
-
-if allowed_email_ids:
-    allowed_email_id_list = allowed_email_ids.split(";")
+# if allowed_email_ids:
+#     allowed_email_id_list = allowed_email_ids.split(";")
 
 class InvalidUsage(Exception):
     status_code = 400
@@ -114,33 +112,7 @@ def authorize_user(duplo_sso_token):
     else:
         return False
 
-    if duplo_auth_token:
-        duplo_auth_headers = {
-            'Authorization': 'Bearer ' + duplo_auth_token
-        }
-        duplo_isadmin_response = requests.get(duplo_auth_url + "/admin/IsUserAdminAnonymous/" + userinfo['Username'], headers=duplo_auth_headers)
-        duplo_tenant_response = requests.get(duplo_auth_url + "/admin/GetTenantsForUserAnonymous/" + userinfo['Username'], headers=duplo_auth_headers)
-
-        is_duplo_admin = False
-        allowed_tenants = []
-
-        if duplo_isadmin_response.status_code == 200:
-            print("Admin api success response", duplo_isadmin_response.json())
-            is_duplo_admin = duplo_isadmin_response.json()
-
-        if duplo_tenant_response.status_code == 200:
-            print("tenant api success response", duplo_tenant_response.json())
-            allowed_tenants = duplo_tenant_response.json()
-
-        print(type(is_duplo_admin), type(allowed_tenants))
-        for rule in rules:
-            if rule["role"] == "admin" and is_duplo_admin:
-                is_allowed = True
-            elif rule["role"] == "user" and rule["tenant"] in allowed_tenants:
-                is_allowed = True
-
-            if is_allowed:
-                break
-    elif userinfo['Username'] in allowed_email_id_list:
+    if "Role" in userinfo and userinfo["Role"] == "Administrator":
         is_allowed = True
+
     return is_allowed
