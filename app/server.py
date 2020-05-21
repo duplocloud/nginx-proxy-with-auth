@@ -58,13 +58,15 @@ def welcome():
             'messsage': "Flask app is running",   # from cognito pool
         })
 
-@app.route("/duplo_auth/login", endpoint='login')
+@app.route("/duplo_auth/login", endpoint='login', methods=['GET', 'POST'])
 def login():
     is_allowed = False
     proxy_home_uri = os.environ.get('PROXY_HOME_URI')
 
     if request.args.get('duplo_sso_token'):
         session['duplo_sso_token'] = request.args.get('duplo_sso_token')
+    elif request.form and request.form.get('duplo_sso_token'):
+        session['duplo_sso_token'] = request.form.get('duplo_sso_token')
 
     if 'duplo_sso_token' in session and session['duplo_sso_token']:
         # print("login -- using token from session")
