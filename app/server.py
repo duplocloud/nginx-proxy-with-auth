@@ -24,11 +24,11 @@ Session(app)
 # if rules_detail:
 #     rules = json.loads(rules_detail)
 
-# allowed_email_ids = os.environ.get('ALLOWED_EMAIL_IDS')
-# allowed_email_id_list = []
+allowed_roles = os.environ.get('ALLOWED_ROLES')
+allowed_roles_list = ["Administrator"]
 
-# if allowed_email_ids:
-#     allowed_email_id_list = allowed_email_ids.split(";")
+if allowed_roles:
+    allowed_roles_list = allowed_roles.split(";")
 
 class InvalidUsage(Exception):
     status_code = 400
@@ -126,7 +126,10 @@ def authorize_user(duplo_sso_token):
     else:
         return False
 
-    if "Role" in userinfo and userinfo["Role"] == "Administrator":
-        is_allowed = True
+    if "Roles" in userinfo:
+        for role in userinfo["Roles"]:
+            if role in allowed_roles_list:
+                is_allowed = True
+                break
 
     return is_allowed
