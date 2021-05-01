@@ -27,7 +27,7 @@ allowed_roles = os.environ.get('ALLOWED_ROLES')
 allowed_roles_list = ["Administrator"]
 
 if allowed_roles:
-     allowed_roles_list = allowed_roles.split(";")
+    allowed_roles_list = allowed_roles.split(";")
 
 class InvalidUsage(Exception):
     status_code = 400
