@@ -4,12 +4,13 @@ import requests
 from flask_cors import CORS
 from flask_session import Session
 import os
+import uuid
 
 app = Flask(__name__)
 SESSION_COOKIE_NAME = 'duplo_auth_proxy_session'
 SESSION_TYPE = 'filesystem'
 SESSION_FILE_DIR = '/project/flask_cookie'
-secret = os.environ.get('FLASK_APP_SECRET')
+secret = os.environ.get('FLASK_APP_SECRET') if os.environ.get('FLASK_APP_SECRET') else str(uuid.uuid4())
 SECRET_KEY = secret.encode()
 
 app.config.from_object(__name__)
@@ -61,7 +62,7 @@ def welcome():
 @app.route("/duplo_auth/login", endpoint='login', methods=['GET', 'POST'])
 def login():
     is_allowed = False
-    proxy_home_uri = os.environ.get('PROXY_HOME_URI')
+    proxy_home_uri = os.environ.get('PROXY_HOME_URI') if os.environ.get('PROXY_HOME_URI') else ""
 
     if request.args.get('duplo_sso_token'):
         session['duplo_sso_token'] = request.args.get('duplo_sso_token')
@@ -71,6 +72,8 @@ def login():
     if 'duplo_sso_token' in session and session['duplo_sso_token']:
         # print("login -- using token from session")
         is_allowed = authorize_user(session['duplo_sso_token'])
+        if is_allowed:
+            session['authorized_on'] = str(datetime.utcnow())
     else:
         # print("going to other block")
         raise InvalidUsage('No Permission to view this page', status_code=403)
@@ -86,13 +89,22 @@ def api_private():
     # print("auth function invoked")
     is_allowed = False
     if 'duplo_sso_token' in session and session['duplo_sso_token']:
-        is_allowed = authorize_user(session['duplo_sso_token'])
+        if 'authorized_on' in session and session['authorized_on']:
+            last_authorized_time_delta = datetime.utcnow() - datetime.strptime(session['authorized_on'], '%Y-%m-%d %H:%M:%S.%f')
+            if last_authorized_time_delta.total_seconds() < 300:
+                is_allowed = True
+
+        if not is_allowed:
+            print("Doing reauth on" , str(datetime.utcnow()))
+            is_allowed = authorize_user(session['duplo_sso_token'])
+            if is_allowed:
+                session['authorized_on'] = str(datetime.utcnow())
     else:
         raise InvalidUsage('No Permission to view this page', status_code=403)
 
     if is_allowed:
         return jsonify({
-            'valid_user': True,   # from cognito pool
+            'valid_user': True,
         })
     else:
         raise InvalidUsage('No Permission to view this page', status_code=403)
