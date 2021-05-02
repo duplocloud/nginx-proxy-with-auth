@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, make_response, redirect, request, session
+from flask import Flask, jsonify, make_response, redirect, request, session, render_template
 import json
 import requests
 from flask_cors import CORS
@@ -60,9 +60,14 @@ def welcome():
             'messsage': "Flask app is running",   # from cognito pool
         })
 
+
+@app.route('/duplo_auth/landing' , endpoint='landing')
+def landing():
+    return render_template('login.html')
+
 @app.route("/duplo_auth/login", endpoint='login')
 def login():
-
+    print("login invoked")
     oauth_client_id = os.environ.get('OAUTH_CLIENT_ID')
     oauth_client_secret = os.environ.get('OAUTH_CLIENT_SECRET')
     app_redirect_host = os.environ.get('APP_REDIRECT_HOST')
@@ -91,7 +96,7 @@ def login():
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded',
         }
-        payload = 'grant_type=authorization_code&client_id=' + oauth_client_id + '&redirect_uri=' + app_redirect_host + '/duplo_auth/login&code=' + request.args.get('code') + '&resource=https%3a%2f%2fgraph.windows.net%2f&client_secret=' + oauth_client_secret
+        payload = 'grant_type=authorization_code&client_id=' + oauth_client_id + '&redirect_uri=' + app_redirect_host + '/duplo_auth/login&code=' + request.args.get('code') + '&resource=https%3a%2f%2fgraph.microsoft.com%2f&client_secret=' + oauth_client_secret
         post_response = requests.post("https://login.microsoftonline.com/" + microsoft_ad_dir_id + "/oauth2/token", headers=headers, data = payload)
 
         if post_response.status_code == 200:
@@ -100,7 +105,7 @@ def login():
             user_info_headers = {
                 'Authorization': 'Bearer ' + token_details['access_token']
             }
-            user_info_response = requests.get("https://graph.windows.net/" + microsoft_ad_dir_id + "/me?api-version=1.6", headers=user_info_headers)
+            user_info_response = requests.get("https://graph.microsoft.com/v1.0/me", headers=user_info_headers)
             print("user info response status code", user_info_response.status_code)
             print(json.dumps(user_info_response.json()))
 
@@ -108,6 +113,8 @@ def login():
                 user_details = user_info_response.json()
                 session['email'] = user_details['userPrincipalName']
                 print("user details got setting email to sessoin ", session['email'])
+        else:
+            print("error from token generation")
 
     response = make_response(redirect('/' + proxy_home_uri))
     return response
