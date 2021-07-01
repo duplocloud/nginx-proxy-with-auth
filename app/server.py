@@ -8,7 +8,9 @@ import uuid
 from datetime import datetime
 
 app = Flask(__name__)
-SESSION_COOKIE_NAME = 'duplo_auth_proxy_session'
+SESSION_COOKIE_NAME = 'duplo_auth_proxy_session_updated'
+SESSION_COOKIE_SECURE=True
+SESSION_COOKIE_SAMESITE='None'
 SESSION_TYPE = 'filesystem'
 SESSION_FILE_DIR = '/project/flask_cookie'
 secret = os.environ.get('FLASK_APP_SECRET') if os.environ.get('FLASK_APP_SECRET') else str(uuid.uuid4())
@@ -132,5 +134,7 @@ def authorize_user(duplo_sso_token):
             if role in allowed_roles_list:
                 is_allowed = True
                 break
+    elif "Role" in userinfo and userinfo["Role"] in allowed_roles_list:
+        is_allowed = True
 
     return is_allowed
