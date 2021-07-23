@@ -115,7 +115,6 @@ def api_private():
 
 def authorize_user(duplo_sso_token):
     duplo_auth_url = os.environ.get('DUPLO_AUTH_URL')
-    duplo_auth_token = os.environ.get('DUPLO_AUTH_TOKEN')
     is_allowed = False
 
     duplo_auth_headers = {
